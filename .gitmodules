@@ -1,0 +1,4 @@
+[submodule "makerdao/dss"]
+	path = makerdao/dss
+	url = git@github.com:zandent/dss.git
+	branch = master
