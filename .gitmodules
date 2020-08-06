@@ -2,3 +2,10 @@
 	path = makerdao/dss
 	url = git@github.com:zandent/dss.git
 	branch = master
+[submodule "makerdao/osm"]
+	path = makerdao/osm
+	url = git@github.com:zandent/osm.git
+	branch = master
+[submodule "makerdao/median"]
+	path = makerdao/median
+	url = git@github.com:zandent/median.git
