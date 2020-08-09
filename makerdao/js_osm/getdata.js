@@ -23,7 +23,7 @@ async function main() {
   // create contract instance
   const contractosm = cfx.Contract({
     abi: require('./contract/OSM-abi.json'),
-    address: '0x830e02074fabf50abff0a3241f910b96ab831170',
+    address: '0x8ff433b98dcdbafdcbe14f736b6dd7bc6e6efefb',
   });
 
   await contractosm.getCurrentPrice();
