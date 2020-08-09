@@ -59,8 +59,8 @@ contract OSM is LibNote {
     }
 
     address public src;
-    uint16  constant ONE_HOUR = uint16(200);
-    uint16  constant ONE_HOUR_FOR_EMITSIG_DELAY= 200;
+    uint16  constant ONE_HOUR = uint16(100);
+    uint16  constant ONE_HOUR_FOR_EMITSIG_DELAY= 100;
     uint16  public hop = ONE_HOUR;
     uint64  public zzz;
 
@@ -188,14 +188,10 @@ contract OSM is LibNote {
     // SendUpdate code to be executed
     // The slot is converted to a function that will be called in slot transactions.
     function SendUpdate_func(bytes32 unused)  public  {
-        
-        
-        bytes32 wut = bytes32(uint(unused) + 1);
-        bool ok = true;
+        (bytes32 wut, bool ok) = DSValue(src).peek();
         if (ok) {
             cur = nxt;
             nxt = Feed(uint128(uint(wut)), 1);
-            zzz = prev(era());
             emit LogValue(bytes32(uint(cur.val)));
             bytes32 price = bytes32(uint(cur.val));
         //////////////////////////////////////////////////////////////////////////////////////////////////

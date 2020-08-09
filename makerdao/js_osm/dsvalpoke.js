@@ -19,19 +19,19 @@ async function main() {
   const accountosm = cfx.Account(PRIVATE_KEY_OSM); // create account instance
   console.log(accountosm.address);
 
-  // ================================ Contract ================================
   // create contract instance
-  const contractosm = cfx.Contract({
-    abi: require('./contract/OSM-abi.json'),
-    address: '0x8c9d72e6efba0ee73f4fa38cb80ef88fd0271d0d',
+  const contractds_val = cfx.Contract({
+    abi: require('./contract/DSValue-abi.json'),
+    // code is unnecessary
+    address: '0x8df4fade46019b611baed0c03875055942255aee',
   });
-
-
   // deploy the contract, and get `contractCreated`
-  const receiptosm = await contractosm.startPriceUpdate()
-    .sendTransaction({from: accountosm,gas: 10000000})
+  const receiptosm = await contractds_val.poke([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,11,22,33])
+    .sendTransaction({from: accountosm})
     .confirmed();
-  console.log(receiptosm);
+  console.log(receiptosm);  
+    await contractds_val.peek();
+
 }
 
 main().catch(e => console.error(e));
