@@ -21,28 +21,27 @@ async function main() {
 
   // ================================ Contract ================================
   // create contract instance
+  const contractspot = cfx.Contract({
+    abi: require('./contract/Spotter-abi.json'),
+    address: '0x8f32e4276c96cba1adb30645a7d9b6e38397e770',
+  });
+
   const contractosm = cfx.Contract({
     abi: require('./contract/OSM-abi.json'),
-    bytecode: require('./contract/OSM-bytecode.json'),
+    address: '0x8c9d72e6efba0ee73f4fa38cb80ef88fd0271d0d',
   });
-  // create contract instance
-  const contractds_val = cfx.Contract({
-    abi: require('./contract/DSValue-abi.json'),
-    // code is unnecessary
-    address: '0x8df4fade46019b611baed0c03875055942255aee',
-  });
+
   // deploy the contract, and get `contractCreated`
-  const receiptosm = await contractosm.constructor(contractds_val.address)
-    .sendTransaction({from: accountosm,
-                      gas: 10000000 })
+  const receiptspot = await contractspot.poke_to_bind(contractosm.address)
+    .sendTransaction({from: accountosm})
     .confirmed();
-  console.log(receiptosm);
+  console.log(receiptspot);
 }
 
 main().catch(e => console.error(e));
 
 // ../../solidity/signalslot/parse.pl src/osm_sig.sol src/osm_sig_parsed.sol
 // make build
-// cp out/OSM.abi ../conflux-singal-handler-case-study/makerdao/js_osm/contract/OSM-abi.json
-// cp out/OSM.bin ../conflux-singal-handler-case-study/makerdao/js_osm/contract/OSM-bytecode.json
-// cp src/osm_sig_parsed.sol ../conflux-singal-handler-case-study/makerdao/js_osm/contract/osm_sig_parsed.sol
+// cp out/Spotter.abi ../conflux-singal-handler-case-study/makerdao/js_osm/contract/Spotter-abi.json
+// cp out/Spotter.bin ../conflux-singal-handler-case-study/makerdao/js_osm/contract/Spotter-bytecode.json
+// cp src/spot_sig_parsed.sol ../conflux-singal-handler-case-study/makerdao/js_osm/contract/spot_sig_parsed.sol

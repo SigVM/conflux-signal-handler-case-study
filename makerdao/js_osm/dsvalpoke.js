@@ -26,7 +26,7 @@ async function main() {
     address: '0x8df4fade46019b611baed0c03875055942255aee',
   });
   // deploy the contract, and get `contractCreated`
-  const receiptosm = await contractds_val.poke([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,11,22,33])
+  const receiptosm = await contractds_val.poke([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,127,126,125])
     .sendTransaction({from: accountosm})
     .confirmed();
   console.log(receiptosm);  

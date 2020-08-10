@@ -21,17 +21,19 @@ async function main() {
 
   // ================================ Contract ================================
   // create contract instance
-  const contractdaval = cfx.Contract({
-    abi: require('./contract/DSValue-abi.json'),
-    bytecode: require('./contract/DSValue-bytecode.json'),
+  const contractspot = cfx.Contract({
+    abi: require('./contract/Spotter-abi.json'),
+    address: '0x8f32e4276c96cba1adb30645a7d9b6e38397e770',
   });
 
   // deploy the contract, and get `contractCreated`
-  const receiptds = await contractdaval.constructor()
-    .sendTransaction({ from: accountosm })
-    .confirmed();
-  console.log(receiptds);
+  await contractspot.getPrice();
 }
 
 main().catch(e => console.error(e));
 
+// ../../solidity/signalslot/parse.pl src/osm_sig.sol src/osm_sig_parsed.sol
+// make build
+// cp out/Spotter.abi ../conflux-singal-handler-case-study/makerdao/js_osm/contract/Spotter-abi.json
+// cp out/Spotter.bin ../conflux-singal-handler-case-study/makerdao/js_osm/contract/Spotter-bytecode.json
+// cp src/spot_sig_parsed.sol ../conflux-singal-handler-case-study/makerdao/js_osm/contract/spot_sig_parsed.sol
