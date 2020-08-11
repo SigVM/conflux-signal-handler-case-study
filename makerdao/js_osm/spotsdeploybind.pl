@@ -112,7 +112,7 @@ node deploydsval.js
 node deployosm.js //deploy with dsvalue contract address
 node dsvalpoke.js
 node start_emit.js
-//Then better to  turn offall info! print in rust
-
-./spotsdeploybind.pl <num of nodes> <osm address> //to get time comsumption
+//Then better to turn off all info! print in rust
+./spotsdeploybind.pl <num of nodes> <osm address>
+//Then check slottx time in rust print
 =cut
