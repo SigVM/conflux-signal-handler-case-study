@@ -26,7 +26,7 @@ async function main() {
     address: '0x8e661963c993cb441c3668b2ca7a7f1ef6897401',
   });
 
-  const receiptosm = await contractosm.step(50)
+  const receiptosm = await contractosm.step(1)
   .sendTransaction({from: accountosm,
                     gas: 10000000 })
   .confirmed();
