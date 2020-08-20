@@ -9,3 +9,7 @@
 [submodule "makerdao/median"]
 	path = makerdao/median
 	url = git@github.com:zandent/median.git
+[submodule "compound/compound-protocol"]
+	path = compound/compound-protocol
+	url = git@github.com:zandent/compound-protocol.git
+	branch = master
