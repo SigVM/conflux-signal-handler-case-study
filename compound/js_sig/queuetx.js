@@ -24,21 +24,20 @@ async function main() {
   // create contract instance
   const contracttl = cfx.Contract({
     abi: require('./contracts/Sig_Timelock-abi.json'),
-    address: '0x8c32a03cdac95d9b6be78e67c83fd65ba7660c62',
+    address: '0x875468f1230b8b13693fea4b9d9cacb62f126aae',
   });
-  // console.log(await contracttl.delay());
-  // console.log(await contracttl.admin());
+  console.log(await contracttl.delay());
+  console.log(await contracttl.admin());
   let target = contracttl.address;
   let value = 0;
   let signature = 'setDelay(uint256)';
   let data = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255];
-  let delay=  101;
+  let delay=  200;
   const receipttl = await contracttl.queueTransaction(
     target, value, signature, data, delay)
-    .sendTransaction({ from: accounttl,gas: 3000000 })
+    .sendTransaction({ from: accounttl, gas: 1000000})
     .confirmed();
   console.log(receipttl);
-  console.log(await contracttl.delay());
 }
 
 main().catch(e => console.error(e));
