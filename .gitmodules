@@ -13,3 +13,7 @@
 	path = compound/compound-protocol
 	url = git@github.com:zandent/compound-protocol.git
 	branch = master
+[submodule "augur/augur"]
+	path = augur/augur
+	url = git@github.com:zandent/augur.git
+	branch = master
