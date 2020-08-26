@@ -34,4 +34,21 @@ async function main() {
 }
 
 main().catch(e => console.error(e));
+/*
+cp ~/Documents/augur/packages/augur-core/source/contracts/out/TestNetDai* .
+cp ~/Documents/augur/packages/augur-core/source/contracts/out/SimpleUniverse.* .
+cp ~/Documents/augur/packages/augur-core/source/contracts/out/Augur.* .
+cp ~/Documents/augur/packages/augur-core/source/contracts/out/Cash.* .
+
+deploy TestNetDaiVat
+deploy Cash
+deploy TestNetDaiJoin using TestNetDaiVat, Cash
+deploy TestNetDaiPot using TestNetDaiVat
+deploy Augur
+register cash, daivat, daipot, daijoin into augur
+deploy universe using augur
+
+
+
+*/
 
