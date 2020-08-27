@@ -4,11 +4,12 @@ use warnings;
 use POSIX;
 
 for(@ARGV){
-  print("File $_ is parsed\n");
   if($_ =~ /\.abi/){
+  print("File $_ is parsed\n");
       my ($tmp) = $_ =~ /(.+)\.abi/;
       system("mv $_ $tmp\-abi.json");
   }elsif($_ =~ /\.bin/){
+  print("File $_ is parsed\n");
     my ($tmp) = $_ =~ /(.+)\.bin/;
     open( my $main_fh, "<", "$_" ) or die $!;
     open( my $df_fh, ">", "$tmp\-bytecode.json" ) or die $!;
