@@ -173,11 +173,11 @@ async function main() {
     abi: require('./contracts/TestNetDaiPot-abi.json'),
     address: receipt4.contractCreated,
   });
-  await contractPot.setpie(accountminer.address, 1000000)
+  await contractPot.setpie(receipt6.contractCreated, 0xDEADBEEF)
   .sendTransaction({ from: accountminer})
   .confirmed();
   console.log("-----------------MINER PIE IS---------------------");
-  await contractPot.getpie(accountminer.address);
+  await contractPot.getpie(receipt6.contractCreated);
 
   // In Cash:
   // init with augur
@@ -191,28 +191,16 @@ async function main() {
   .sendTransaction({ from: accountminer})
   .confirmed();
 
-  await contractCash.approve(accountminer.address, 1000)
+  await contractCash.approve(accountminer.address, 0x0000FEEB)
   .sendTransaction({ from: accountminer})
   .confirmed();
   console.log("-----------------MINER ALLOWANCE IS---------------------");
   await contractCash.allowance(accountminer.address, accountminer.address);
-  await contractCash.faucet(10000)
+  await contractCash.faucet(0x0000BEEF)
   .sendTransaction({ from: accountminer})
   .confirmed();
   console.log("-----------------MINER BALANCE IS---------------------");
   await contractCash.balanceOf(accountminer.address);
-
-  // // In universe:
-  // // deposit from miner to current universe
-  // const contractUni = cfx.Contract({
-  //   abi: require('./contracts/SimpleUniverse-abi.json'),
-  //   address: receipt2.contractCreated,
-  // });
-  // await contractUni.deposit(accountminer.address, 0x000000EF, accountmarket.address)
-  // .sendTransaction({ from: accountminer})
-  // .confirmed();
-  // console.log("-----------------MINER BALANCE AFTER DEPOSIT IS---------------------");
-  // await contractCash.balanceOf(accountminer.address);
 
   console.log("Vat CONTRACT ADDRESS IS");
   console.log(receipt1.contractCreated);

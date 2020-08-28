@@ -26,40 +26,33 @@ async function main() {
   // deposit from miner to current universe
   const contractUni = cfx.Contract({
     abi: require('./contracts/SimpleUniverse-abi.json'),
-    address: '0x808f7d3ca25bb652b8aa0b1d340b5d7ffa0f7388',
+    address: '0x8b8b6f8648eeb8716d10b362c9521e9e0b9ff1a0',
   });
   const contractCash = cfx.Contract({
     abi: require('./contracts/Cash-abi.json'),
-    address: '0x8f1aed66825ab789569a4ef36cb552564c39645b',
+    address: '0x88509883175c170d2b0c58c92ed7b5e177fcc13d',
   });
-  const contractAugur = cfx.Contract({
-    abi: require('./contracts/Augur-abi.json'),
-    address: '0x81f7c609e7279c70b1fa5b50b6c60509de2efb53',
-  });
-  
-  await contractAugur.trustedTransfer(contractCash.address, accountminer.address, contractUni.address, 333)
+
+  await contractUni.deposit(accountminer.address, 0x00EF, accountmarket.address)
   .sendTransaction({ from: accountminer})
   .confirmed();
 
-  // await contractUni.deposit(accountminer.address, 333, accountmarket.address)
-  // .sendTransaction({ from: accountminer})
-  // .confirmed();
-  await contractUni.cash();
-  // await contractUni.sweepInterest()
-  // .sendTransaction({ from: accountminer})
-  // .confirmed();
-
   console.log("-----------------MINER BALANCE AFTER DEPOSIT IS---------------------");
-  // await contractCash.transferFrom(accountminer.address,contractUni.address, 333)
-  // .sendTransaction({ from: accountminer})
-  // .confirmed();
+
   await contractCash.allowance(accountminer.address,accountminer.address);
   await contractCash.balanceOf(accountminer.address);
   await contractCash.balanceOf(contractUni.address);
 
-  // await contract7.sweepInterest()
-  // .sendTransaction({ from: accountminer})
-  // .confirmed();
+  await contractUni.sweepInterest()
+  .sendTransaction({ from: accountminer, gas:10000000})
+  .confirmed();
+
+  console.log("-----------------MINER BALANCE AFTER SWEEPINTEREST IS---------------------");
+
+  await contractCash.allowance(accountminer.address,accountminer.address);
+  await contractCash.balanceOf(accountminer.address);
+  await contractCash.balanceOf(contractUni.address);
+
 }
 
 main().catch(e => console.error(e));
