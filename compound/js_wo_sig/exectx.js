@@ -24,7 +24,7 @@ async function main() {
   // create contract instance
   const contracttl = cfx.Contract({
     abi: require('./contracts/Timelock-abi.json'),
-    address: '0x848d59ea0f44d4825e98fb16fa18e371363295f4',
+    address: '0x8101fba7b415baa229954cb1d15e3d255345768a',
   });
   console.log(await contracttl.delay());
   console.log(await contracttl.admin());
@@ -32,7 +32,7 @@ async function main() {
   let value = 0;
   let signature = 'setDelay(uint256)';
   let data = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255];
-  let eta=  1597881527;
+  let eta=  1599332890;
   console.log(eta);
   const receipttl = await contracttl.executeTransaction(
     target, value, signature, data, eta)
@@ -40,6 +40,7 @@ async function main() {
     .confirmed();
   console.log(receipttl);
   console.log(await contracttl.delay());
+  console.log(await contracttl.LastestTxTimestamp());
 }
 
 main().catch(e => console.error(e));

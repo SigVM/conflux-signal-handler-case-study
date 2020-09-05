@@ -27,7 +27,7 @@ async function main() {
   });
 
   // deploy the contract, and get `contractCreated`
-  const receipttl = await contracttl.constructor(accounttl.address, 100)
+  const receipttl = await contracttl.constructor(accounttl.address, 20)
     .sendTransaction({ from: accounttl })
     .confirmed();
   console.log(receipttl);

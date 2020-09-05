@@ -24,7 +24,7 @@ async function main() {
   // create contract instance
   const contracttl = cfx.Contract({
     abi: require('./contracts/Sig_Timelock-abi.json'),
-    address: '0x875468f1230b8b13693fea4b9d9cacb62f126aae',
+    address: '0x83ee6601d16ca60135b9c0ee66987d4723fdde3a',
   });
   console.log(await contracttl.delay());
   console.log(await contracttl.admin());
@@ -38,6 +38,7 @@ async function main() {
     .sendTransaction({ from: accounttl, gas: 1000000})
     .confirmed();
   console.log(receipttl);
+  console.log(await cfx.getEpochNumber());
 }
 
 main().catch(e => console.error(e));
