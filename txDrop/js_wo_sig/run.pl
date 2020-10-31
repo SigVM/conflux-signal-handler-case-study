@@ -13,10 +13,12 @@ for(my $i = 0; $i < $num_tx-1; $i++){
   $accounts[$i] = "0x$tmp";
   #print "$accounts[$i]\n";
 }
-system("rm -rf normal_tx.js");
-open( my $tx_fh,    ">", "normal_tx.js" ) or die $!;
+system("rm -rf deployreceipt.txt");
+system("rm -rf init.js");
+open( my $tx_fh,    ">", "init.js" ) or die $!;
 my $message = <<"END_MESSAGE";
 const { Conflux } = require('js-conflux-sdk');
+const fs = require('fs');
 const PRIVATE_KEYS = ['0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
 END_MESSAGE
 print {$tx_fh} $message;
@@ -38,10 +40,59 @@ async function main() {
   for (i = 0; i < accounts.length; i++) {
     accounts[i] = cfx.Account(PRIVATE_KEYS[i]);
   }
-  var val = 30000*$num_tx;
-  for (i = 0; i < accounts.length-1; i++) {
-    await cfx.sendTransaction({ from: accounts[i], to: accounts[i+1], value: val - i*30000, gasPrice: 1});
+  var val = (5801757812501296255)*$num_tx;
+  for (i = 1; i < accounts.length; i++) {
+    await cfx.sendTransaction({ from: accounts[0], to: accounts[i], value: 5801757812501296255, gasPrice: 1}).confirmed();
   }
+  const accountosm = cfx.Account(PRIVATE_KEYS[0]);
+  const contractosm = cfx.Contract({
+    abi: require('./contract/OSM_ORI-abi.json'),
+    bytecode: require('./contract/OSM_ORI-bytecode.json'),
+  });
+  const contractdaval = cfx.Contract({
+    abi: require('./contract/DSValue-abi.json'),
+    bytecode: require('./contract/DSValue-bytecode.json'),
+  });
+  const receiptds = await contractdaval.constructor()
+    .sendTransaction({ from: accountosm })
+    .confirmed();
+  const receiptosm = await contractosm.constructor(receiptds.contractCreated)
+    .sendTransaction({from: accountosm, gas: 10000000 })
+    .confirmed();
+  const contractdsval_func = cfx.Contract({
+    abi: require('./contract/DSValue-abi.json'),
+    address: receiptds.contractCreated,
+  });
+  var receipt_tmp = await contractdsval_func.poke([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,127,126,125])
+    .sendTransaction({from: accountosm})
+    .confirmed();
+
+  const contractosm_func = cfx.Contract({
+    abi: require('./contract/OSM_ORI-abi.json'),
+    address: receiptosm.contractCreated,
+  });
+  receipt_tmp = await contractosm_func.step(50)
+    .sendTransaction({from: accountosm, gas: 10000000 })
+    .confirmed();
+  receipt_tmp = await contractosm_func.poke()
+    .sendTransaction({from: accountosm, gas: 10000000 })
+    .confirmed();
+  console.log("======================Deploy Spotter==============================");
+  for (i = 0; i < accounts.length; i++) {
+    console.log(accounts[i].address);
+  }
+  var contractspots = new Array(PRIVATE_KEYS.length);
+  for (i = 0; i < contractspots.length; i++) {
+    contractspots[i] = cfx.Contract({
+      abi: require('./contract/Spotter_ORI-abi.json'),
+      bytecode: require('./contract/Spotter_ORI-bytecode.json'),
+    });
+    receipt_tmp = await contractspots[i].constructor(0x1000000000100000000010000000001000000000)
+      .sendTransaction({from: accounts[i]})
+      .confirmed();
+    fs.appendFileSync('deployreceipt.txt', receipt_tmp.contractCreated.toString()+"\\r\\n");
+  }
+  console.log(receipt_tmp);
   for (i = 0; i < accounts.length; i++) {
     console.log(accounts[i].address);
   }
@@ -50,158 +101,8 @@ main().catch(e => console.error(e));
 END_MESSAGE
 print {$tx_fh} $message;
 close $tx_fh;
-system("node normal_tx.js");
-# my $num_nodes = int($ARGV[0]);
-# my $osm_addr = $ARGV[1];
-# my $total_time;
-# system("rm -rf deployreceipt.txt");
+system("node init.js");
 
-# open( my $osm_fh,    ">", "osmpoke.js" ) or die $!;
-# my $message = <<"END_MESSAGE";
-# const { Conflux } = require('js-conflux-sdk');
-
-# const PRIVATE_KEY_OSM = '0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
-
-# async function main() {
-#   const cfx = new Conflux({
-#     url: 'http://localhost:12539',
-#     defaultGasPrice: 1,
-#     defaultGas: 1000000,
-#     logger: console,
-#   });
-
-#   console.log(cfx.defaultGasPrice); // 100
-#   console.log(cfx.defaultGas); // 1000000
-
-#   // ================================ Account =================================
-#   const accountosm = cfx.Account(PRIVATE_KEY_OSM); // create account instance
-#   console.log(accountosm.address);
-
-#   // ================================ Contract ================================
-#   // create contract instance
-#   const contractosm = cfx.Contract({
-#     abi: require('./contract/OSM_ORI-abi.json'),
-#     address: '${osm_addr}',
-#   });
-#   const receiptosm = await contractosm.poke()
-#   .sendTransaction({from: accountosm,
-#                     gas: 10000000 })
-#   .confirmed();
-#   console.log(receiptosm);
-# }
-
-# main().catch(e => console.error(e));
-# END_MESSAGE
-# print {$osm_fh} $message;
-# close $osm_fh;
-# my $start = time();
-# system("node osmpoke.js");
-# my $end = time();
-# $total_time = $total_time + $end - $start;
-# system("rm -rf osmpoke.js");
-
-# my @a = (1..${num_nodes});
-# for(@a){
-# 	print("SPOT $_ is being deployed\n");
-#     system("node deployspotter.js");
-# }
-# open( my $default_fh, "<", "deployreceipt.txt" ) or die $!;
-# my $node = 1;
-# while ( my $line = <$default_fh> ) {
-#     $line =~ s/\R//g;
-#     open( my $main_fh,    ">", "spotter_${node}_poke.js" ) or die $!;
-#     my $message = <<"END_MESSAGE";
-# const { Conflux } = require('js-conflux-sdk');
-
-# const PRIVATE_KEY_OSM = '0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
-
-# async function main() {
-#   const cfx = new Conflux({
-#     url: 'http://localhost:12539',
-#     defaultGasPrice: 1,
-#     defaultGas: 1000000,
-#     logger: console,
-#   });
-
-#   console.log(cfx.defaultGasPrice); // 100
-#   console.log(cfx.defaultGas); // 1000000
-
-#   // ================================ Account =================================
-#   const accountosm = cfx.Account(PRIVATE_KEY_OSM); // create account instance
-#   console.log(accountosm.address);
-
-#   // ================================ Contract ================================
-#   // create contract instance
-#   const contractspot = cfx.Contract({
-#     abi: require('./contract/Spotter_ORI-abi.json'),
-#     address: '${line}',
-#   });
-
-#   const contractosm = cfx.Contract({
-#     abi: require('./contract/OSM_ORI-abi.json'),
-#     address: '${osm_addr}',
-#   });
-
-#   // deploy the contract, and get `contractCreated`
-#   const receiptspot = await contractspot.simple_poke(contractosm.address)
-#     .sendTransaction({from: accountosm})
-#     .confirmed();
-#   console.log(receiptspot);
-# }
-
-# main().catch(e => console.error(e));
-# END_MESSAGE
-#     print {$main_fh} $message;
-#     close $main_fh;
-#     my $start = time();
-#     system("node spotter_${node}_poke.js");
-#     my $end = time();
-#     $total_time = $total_time + $end - $start;
-#     system("rm -rf spotter_${node}_poke.js");
-#     if($node == ceil($num_nodes/2)){
-#         open($main_fh,    ">", "spotter_${node}_getdata.js" ) or die $!;
-#         $message = <<"END_MESSAGE";
-# const { Conflux } = require('js-conflux-sdk');
-
-# const PRIVATE_KEY_OSM = '0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
-
-# async function main() {
-#   const cfx = new Conflux({
-#     url: 'http://localhost:12539',
-#     defaultGasPrice: 1,
-#     defaultGas: 1000000,
-#     logger: console,
-#   });
-
-#   console.log(cfx.defaultGasPrice); // 100
-#   console.log(cfx.defaultGas); // 1000000
-
-#   // ================================ Account =================================
-#   const accountosm = cfx.Account(PRIVATE_KEY_OSM); // create account instance
-#   console.log(accountosm.address);
-
-#   // ================================ Contract ================================
-#   // create contract instance
-#   const contractspot = cfx.Contract({
-#     abi: require('./contract/Spotter_ORI-abi.json'),
-#     address: '${line}',
-#   });
-
-#   // deploy the contract, and get `contractCreated`
-#   await contractspot.getPrice();
-# }
-
-# main().catch(e => console.error(e));
-# END_MESSAGE
-#         print {$main_fh} $message;
-#         close $main_fh;
-#     }
-#     $node = $node + 1;
-# }
-# system("rm -rf deployreceipt.txt");
-# close $default_fh;
-
-# print("Poke Time: $total_time secs\n");
 =for comment
 running order:
 node deploydsval.js
