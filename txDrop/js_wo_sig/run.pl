@@ -4,10 +4,11 @@ use warnings;
 use POSIX;
 use Time::HiRes qw( time );
 
-my $num_tx = int($ARGV[0]);
+my $num_normal_tx = int($ARGV[0]);
+my $num_tx = int($ARGV[1]);
 my @set = ('0' ..'9', 'A' .. 'F');
 my @accounts;
-for(my $i = 0; $i < $num_tx-1; $i++){
+for(my $i = 0; $i < $num_normal_tx+$num_tx-1; $i++){
 	$accounts[$i] = join '' => map $set[rand @set], 1 .. 64;
   my $tmp = $accounts[$i];
   $accounts[$i] = "0x$tmp";
@@ -22,11 +23,11 @@ const fs = require('fs');
 const PRIVATE_KEYS = ['0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
 END_MESSAGE
 print {$tx_fh} $message;
-for(my $i = 0; $i < $num_tx-2; $i++){
+for(my $i = 0; $i < $num_normal_tx+$num_tx-2; $i++){
   my $tmp = $accounts[$i];
 	print {$tx_fh} "'$tmp',";
 }
-my $tmp = $accounts[$num_tx-2];
+my $tmp = $accounts[$num_normal_tx+$num_tx-2];
 $message = <<"END_MESSAGE";
 '$tmp'];
 async function main() {
@@ -36,14 +37,20 @@ async function main() {
     defaultGas: 1000000,
     logger: console,
   });
-  var accounts = new Array(PRIVATE_KEYS.length);
+  var accounts = new Array($num_tx);
   for (i = 0; i < accounts.length; i++) {
     accounts[i] = cfx.Account(PRIVATE_KEYS[i]);
   }
-  var val = (5801757812501296255)*$num_tx;
+  var val = (48017578125012962550)*$num_tx;
   for (i = 1; i < accounts.length; i++) {
-    await cfx.sendTransaction({ from: accounts[0], to: accounts[i], value: 5801757812501296255, gasPrice: 1}).confirmed();
+    await cfx.sendTransaction({ from: accounts[0], to: accounts[i], value: 48017578125012962550, gasPrice: 1}).confirmed();
   }
+  var normal_accounts = new Array($num_normal_tx);
+  for (i = accounts.length; i < accounts.length + normal_accounts.length; i++) {
+    normal_accounts[i-accounts.length] = cfx.Account(PRIVATE_KEYS[i]);
+    await cfx.sendTransaction({ from: accounts[0], to: normal_accounts[i-accounts.length], value: 300000000, gasPrice: 1}).confirmed();
+  }
+
   const accountosm = cfx.Account(PRIVATE_KEYS[0]);
   const contractosm = cfx.Contract({
     abi: require('./contract/OSM_ORI-abi.json'),
@@ -71,7 +78,7 @@ async function main() {
     abi: require('./contract/OSM_ORI-abi.json'),
     address: receiptosm.contractCreated,
   });
-  receipt_tmp = await contractosm_func.step(50)
+  receipt_tmp = await contractosm_func.step(1)
     .sendTransaction({from: accountosm, gas: 10000000 })
     .confirmed();
   receipt_tmp = await contractosm_func.poke()
@@ -81,18 +88,40 @@ async function main() {
   for (i = 0; i < accounts.length; i++) {
     console.log(accounts[i].address);
   }
-  var contractspots = new Array(PRIVATE_KEYS.length);
+  var contractspots = new Array($num_tx);
+  var receipt_spots = new Array($num_tx);
   for (i = 0; i < contractspots.length; i++) {
+    console.log("=====================Spotter Deploy==============================");
+    console.log(i);
     contractspots[i] = cfx.Contract({
       abi: require('./contract/Spotter_ORI-abi.json'),
       bytecode: require('./contract/Spotter_ORI-bytecode.json'),
     });
-    receipt_tmp = await contractspots[i].constructor(0x1000000000100000000010000000001000000000)
+    receipt_spots[i] = await contractspots[i].constructor(0x1000000000100000000010000000001000000000)
       .sendTransaction({from: accounts[i]})
       .confirmed();
-    fs.appendFileSync('deployreceipt.txt', receipt_tmp.contractCreated.toString()+"\\r\\n");
+    fs.appendFileSync('deployreceipt.txt', receipt_spots[i].contractCreated.toString()+"\\r\\n");
   }
-  console.log(receipt_tmp);
+  var contractspots_func = new Array($num_tx);
+  for (i = 0; i < contractspots_func.length; i++) {
+    console.log("=====================Spotter Poking==============================");
+    console.log(i);
+    contractspots_func[i] = cfx.Contract({
+    abi: require('./contract/Spotter_ORI-abi.json'),
+    address: receipt_spots[i].contractCreated,
+    });
+    receipt_tmp = await contractspots_func[i].simple_poke(contractosm_func.address).sendTransaction({from: accounts[i], gasPrice: 1});
+  }
+  for (i = 0; i < normal_accounts.length; i++) {
+    console.log("=====================Normal Transfer==============================");
+    console.log(i);
+    await cfx.sendTransaction({from: normal_accounts[i], to: accounts[0], value: 1, gasPrice: 1});
+  }
+  console.log("=====================Normal Account==============================");
+  for (i = 0; i < normal_accounts.length; i++) {
+    console.log(normal_accounts[i].address);
+  }
+  console.log("=====================Poking Account==============================");
   for (i = 0; i < accounts.length; i++) {
     console.log(accounts[i].address);
   }
