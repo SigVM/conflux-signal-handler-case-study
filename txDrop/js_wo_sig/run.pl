@@ -7,6 +7,10 @@ use Time::HiRes qw( time );
 my $num_normal_tx = int($ARGV[0]);
 my $num_tx = int($ARGV[1]);
 my $osm_init = int($ARGV[2]);
+my $num_gasprice_random_size = int($ARGV[3]);
+my $gasprice_maximum = int($ARGV[4]);
+my $gasprice_normal_mean = int($ARGV[5]);
+my $gasprice_normal_sd = int($ARGV[6]);
 my @set = ('0' ..'9', 'A' .. 'F');
 my @accounts;
 for(my $i = 0; $i < $num_normal_tx+$num_tx-1; $i++){
@@ -210,6 +214,39 @@ async function main() {
     normal_accounts[i-accounts.length] = cfx.Account(PRIVATE_KEYS[i]);
   }
   var contractspots_func = new Array($num_poking_in_tx);
+
+  // create a list of n numbers between 1 and max
+  var list = [];
+  for (i = 0; i < $num_gasprice_random_size; i++) {
+    list[i] = Math.random() * ($gasprice_maximum - 1) + 1;
+  }
+  // compute mean, sd and the interval range: [min, max]
+  var mean;
+  var sd;
+  var len = list.length;
+  var sum;
+  var a = Infinity;
+  var b = -a;
+  for (sum = i = 0; i < len; i++) {
+    sum += list[i];
+    a = Math.min(a, list[i]);
+    b = Math.max(b, list[i]);
+  }
+  mean = sum / len;
+  for (sum = i = 0; i < len; i++) {
+    sum += (list[i] - mean) * (list[i] - mean);
+  }
+  sd = Math.sqrt(sum / (len - 1));
+  // transform the list to have an exact mean of 5 and sd of 2
+  var oldMean = mean;
+  var oldSD = sd;
+  var newList = [];
+  var len = list.length;
+  for (i = 0; i < len; i++) {
+    newList[i] = $gasprice_normal_sd * (list[i] - oldMean) / oldSD + $gasprice_normal_mean;
+  }
+
+  var normal_accounts_gasprice = [];
   for (i = 1; i < contractspots_func.length; i++) {
     console.log("=====================Spotter Poking==============================");
     console.log(i);
@@ -217,20 +254,23 @@ async function main() {
     abi: require('./contract/Spotter_ORI-abi.json'),
     address: SPOT_ADDR[i],
     });
-    receipt_tmp = await contractspots_func[i].simple_poke(OSM_ADDR).sendTransaction({from: accounts[i], gasPrice: 1});
+    receipt_tmp = await contractspots_func[i].simple_poke(OSM_ADDR).sendTransaction({from: accounts[i], gasPrice: $gasprice_normal_mean});
   }
   for (i = 0; i < normal_accounts.length; i++) {
     console.log("=====================Normal Transfer==============================");
     console.log(i);
-    await cfx.sendTransaction({from: normal_accounts[i], to: accounts[0], value: 1, gasPrice: 1});
+    normal_accounts_gasprice[i] = Math.round(newList[Math.floor(Math.random() * newList.length)]);
+    await cfx.sendTransaction({from: normal_accounts[i], to: accounts[0], value: 1, gasPrice: normal_accounts_gasprice[i]});
   }
   console.log("=====================Normal Account==============================");
   for (i = 0; i < normal_accounts.length; i++) {
     console.log(normal_accounts[i].address);
+    console.log(normal_accounts_gasprice[i]);
   }
   console.log("=====================Poking Account==============================");
   for (i = 0; i < accounts.length; i++) {
     console.log(accounts[i].address);
+    console.log($gasprice_normal_mean);
   }
 }
 main().catch(e => console.error(e));
