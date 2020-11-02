@@ -3,3 +3,7 @@ deployreceipt.txt
 txDrop/js_wo_sig/init.js
 txDrop/js_wo_sig/tx.js
 txDrop/js_wo_sig/*txt
+txDrop/js_sig/init.js
+txDrop/js_sig/tx.js
+txDrop/js_sig/*.txt
+txDrop/js_sig/*.log
