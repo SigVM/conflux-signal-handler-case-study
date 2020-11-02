@@ -11,6 +11,8 @@ my $num_gasprice_random_size = int($ARGV[3]);
 my $gasprice_maximum = int($ARGV[4]);
 my $gasprice_normal_mean = int($ARGV[5]);
 my $gasprice_normal_sd = int($ARGV[6]);
+my $tx_rate = int($ARGV[7]);
+my ${poking_period} = int($ARGV[8]);
 my @set = ('0' ..'9', 'A' .. 'F');
 my @accounts;
 for(my $i = 0; $i < $num_normal_tx+$num_tx-1; $i++){
@@ -52,7 +54,7 @@ async function main() {
   var normal_accounts = new Array($num_normal_tx);
   for (i = accounts.length; i < accounts.length + normal_accounts.length; i++) {
     normal_accounts[i-accounts.length] = cfx.Account(PRIVATE_KEYS[i]);
-    await cfx.sendTransaction({ from: accounts[0], to: normal_accounts[i-accounts.length], value: 300000000, gasPrice: 1}).confirmed();
+    await cfx.sendTransaction({ from: accounts[0], to: normal_accounts[i-accounts.length], value: 48017578125012962550, gasPrice: 1}).confirmed();
     fs.appendFileSync('normalaccount.txt', PRIVATE_KEYS[i].toString()+"\\r\\n");
   }
 
@@ -155,6 +157,7 @@ foreach my $cmd( @commands ) {
 wait for @pids;
 open( $tx_fh,    ">", "tx.js" ) or die $!;
 $message = <<"END_MESSAGE";
+const JSBI = require('jsbi');
 const { Conflux } = require('js-conflux-sdk');
 const fs = require('fs');
 const PRIVATE_KEYS = ['0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
@@ -198,12 +201,15 @@ while ( my $line = <$default_fh> ) {
 close $default_fh;
 $message = <<"END_MESSAGE";
 const OSM_ADDR = '${osm_addr}';
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 async function main() {
   const cfx = new Conflux({
     url: 'http://localhost:12539',
     defaultGasPrice: 1,
     defaultGas: 1000000,
-    logger: console,
+    logger: undefined,
   });
   var accounts = new Array($num_poking_in_tx);
   for (i = 0; i < accounts.length; i++) {
@@ -247,6 +253,7 @@ async function main() {
   }
 
   var normal_accounts_gasprice = [];
+  var normal_accounts_nonce = [];
   for (i = 1; i < contractspots_func.length; i++) {
     console.log("=====================Spotter Poking==============================");
     console.log(i);
@@ -254,24 +261,40 @@ async function main() {
     abi: require('./contract/Spotter_ORI-abi.json'),
     address: SPOT_ADDR[i],
     });
-    receipt_tmp = await contractspots_func[i].simple_poke(OSM_ADDR).sendTransaction({from: accounts[i], gasPrice: $gasprice_normal_mean});
   }
   for (i = 0; i < normal_accounts.length; i++) {
-    console.log("=====================Normal Transfer==============================");
+    console.log("=====================Normal Transfer Init Nonce==============================");
     console.log(i);
-    normal_accounts_gasprice[i] = Math.round(newList[Math.floor(Math.random() * newList.length)]);
-    await cfx.sendTransaction({from: normal_accounts[i], to: accounts[0], value: 1, gasPrice: normal_accounts_gasprice[i]});
+    normal_accounts_nonce[i] = await cfx.getNextNonce(normal_accounts[i].address);
   }
-  console.log("=====================Normal Account==============================");
-  for (i = 0; i < normal_accounts.length; i++) {
-    console.log(normal_accounts[i].address);
-    console.log(normal_accounts_gasprice[i]);
+  var index=0;
+  while(true){
+    await sleep(1000);
+    for(j=0;j<Math.round(${tx_rate}/normal_accounts.length);j++){
+      for (i = 0; i < normal_accounts.length; i++) {
+        normal_accounts_gasprice[i] = Math.round(newList[Math.floor(Math.random() * newList.length)]);       
+        await cfx.sendTransaction({from: normal_accounts[i], to: accounts[0], value: 1, nonce: normal_accounts_nonce[i], gasPrice: normal_accounts_gasprice[i]});
+        normal_accounts_nonce[i] = JSBI.add(normal_accounts_nonce[i],JSBI.BigInt(1));      
+      }
+    }
+    if(index%${poking_period}==0){
+      for(i = 1; i < contractspots_func.length; i++){
+        receipt_tmp = await contractspots_func[i].simple_poke(OSM_ADDR).sendTransaction({from: accounts[i], gasPrice: $gasprice_normal_mean});
+      }
+    }
+    console.log(index);
+    index++;
   }
-  console.log("=====================Poking Account==============================");
-  for (i = 0; i < accounts.length; i++) {
-    console.log(accounts[i].address);
-    console.log($gasprice_normal_mean);
-  }
+  // console.log("=====================Normal Account==============================");
+  // for (i = 0; i < normal_accounts.length; i++) {
+  //   console.log(normal_accounts[i].address);
+  //   console.log(normal_accounts_gasprice[i]);
+  // }
+  // console.log("=====================Poking Account==============================");
+  // for (i = 0; i < accounts.length; i++) {
+  //   console.log(accounts[i].address);
+  //   console.log($gasprice_normal_mean);
+  // }
 }
 main().catch(e => console.error(e));
 END_MESSAGE
