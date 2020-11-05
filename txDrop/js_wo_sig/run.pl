@@ -21,6 +21,9 @@ for(my $i = 0; $i < $num_normal_tx+$num_tx-1; $i++){
   $accounts[$i] = "0x$tmp";
   #print "$accounts[$i]\n";
 }
+if($osm_init){
+  system("./clearaccounts.sh");
+}
 system("rm -rf init.js");
 open( my $tx_fh,    ">", "init.js" ) or die $!;
 my $message = <<"END_MESSAGE";
@@ -267,34 +270,62 @@ async function main() {
     console.log(i);
     normal_accounts_nonce[i] = await cfx.getNextNonce(normal_accounts[i].address);
   }
-  var index=0;
+  var accounts_nonce = [];
+  for (i = 0; i < accounts.length; i++) {
+    console.log("=====================Contract Tx Init Nonce==============================");
+    console.log(i);
+    accounts_nonce[i] = await cfx.getNextNonce(accounts[i].address);
+  }
+  console.log("Iter ", Math.round(${tx_rate}/(normal_accounts.length + contractspots_func.length)));
+  var index = 1;
+  var num_nor_tx = 0;
+  var num_int_tx = 0;
+  var num_pok_tx = 0;
+  var j;
+  var i;
+  var k;
   while(true){
+    num_nor_tx = 0;
+    num_int_tx = 0;
+    num_pok_tx = 0;  
     await sleep(1000);
-    for(j=0;j<Math.round(${tx_rate}/normal_accounts.length);j++){
+    for(j=0;j<Math.round(${tx_rate}/(normal_accounts.length + contractspots_func.length));j++){
       for (i = 0; i < normal_accounts.length; i++) {
+        console.log("NORMAL_TX UNDERGOING", i);
         normal_accounts_gasprice[i] = Math.round(newList[Math.floor(Math.random() * newList.length)]);       
         await cfx.sendTransaction({from: normal_accounts[i], to: accounts[0], value: 1, nonce: normal_accounts_nonce[i], gasPrice: normal_accounts_gasprice[i]});
-        normal_accounts_nonce[i] = JSBI.add(normal_accounts_nonce[i],JSBI.BigInt(1));      
+        normal_accounts_nonce[i] = JSBI.add(normal_accounts_nonce[i],JSBI.BigInt(1));    
+        num_nor_tx++;  
+      }
+      for(k = 0; k < index; k++){
+        for(i = 1; i < contractspots_func.length; i++){
+          console.log("INT_TX UNDERGOING", i);
+          receipt_tmp = await contractspots_func[i].getPrice().sendTransaction({from: accounts[i], nonce: accounts_nonce[i], gasPrice: Math.round(newList[Math.floor(Math.random() * newList.length)])});
+          accounts_nonce[i] = JSBI.add(accounts_nonce[i],JSBI.BigInt(1));
+          num_int_tx++;
+        }
       }
     }
     if(index%${poking_period}==0){
       for(i = 1; i < contractspots_func.length; i++){
-        receipt_tmp = await contractspots_func[i].simple_poke(OSM_ADDR).sendTransaction({from: accounts[i], gasPrice: $gasprice_normal_mean});
+        console.log("POK_TX UNDERGOING", i);
+        receipt_tmp = await contractspots_func[i].simple_poke(OSM_ADDR).sendTransaction({from: accounts[i], nonce: accounts_nonce[i], gasPrice: $gasprice_normal_mean});
+        accounts_nonce[i] = JSBI.add(accounts_nonce[i],JSBI.BigInt(1));
+        num_pok_tx++;
       }
     }
     console.log(index);
+    console.log("=====================Normal Account Last Nonce==============================");
+    for (i = 0; i < normal_accounts.length; i++) {
+      console.log(normal_accounts_nonce[i]);
+    }
+    console.log("=====================Poking Account Last Nonce==============================");
+    for (i = 0; i < accounts.length; i++) {
+      console.log(accounts_nonce[i]);
+    }
+    console.log("NORMAL_TX ", num_nor_tx, "INT_TX ", num_int_tx, "POK_TX ", num_pok_tx);
     index++;
   }
-  // console.log("=====================Normal Account==============================");
-  // for (i = 0; i < normal_accounts.length; i++) {
-  //   console.log(normal_accounts[i].address);
-  //   console.log(normal_accounts_gasprice[i]);
-  // }
-  // console.log("=====================Poking Account==============================");
-  // for (i = 0; i < accounts.length; i++) {
-  //   console.log(accounts[i].address);
-  //   console.log($gasprice_normal_mean);
-  // }
 }
 main().catch(e => console.error(e));
 END_MESSAGE
