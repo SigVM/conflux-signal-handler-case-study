@@ -11,6 +11,7 @@ my $num_gasprice_random_size = int($ARGV[3]);
 my $gasprice_maximum = int($ARGV[4]);
 my $gasprice_normal_mean = int($ARGV[5]);
 my $gasprice_normal_sd = int($ARGV[6]);
+my $tx_rate = int($ARGV[7]);
 my @set = ('0' ..'9', 'A' .. 'F');
 my @accounts;
 for(my $i = 0; $i < $num_normal_tx+$num_tx-1; $i++){
@@ -18,6 +19,9 @@ for(my $i = 0; $i < $num_normal_tx+$num_tx-1; $i++){
   my $tmp = $accounts[$i];
   $accounts[$i] = "0x$tmp";
   #print "$accounts[$i]\n";
+}
+if($osm_init){
+  system("./clearaccounts.sh");
 }
 system("rm -rf init.js");
 open( my $tx_fh,    ">", "init.js" ) or die $!;
@@ -49,11 +53,11 @@ async function main() {
     defaultGas: 1000000,
     logger: console,
   });
+  var i;
   var accounts = new Array($num_tx);
   for (i = 0; i < accounts.length; i++) {
     accounts[i] = cfx.Account(PRIVATE_KEYS[i]);
   }
-  var val = (48017578125012962550)*$num_tx;
   for (i = 1; i < accounts.length; i++) {
     await cfx.sendTransaction({ from: accounts[0], to: accounts[i], value: 48017578125012962550, gasPrice: 1}).confirmed();
     fs.appendFileSync('spotteraccount.txt', PRIVATE_KEYS[i].toString()+"\\r\\n");
@@ -61,7 +65,7 @@ async function main() {
   var normal_accounts = new Array($num_normal_tx);
   for (i = accounts.length; i < accounts.length + normal_accounts.length; i++) {
     normal_accounts[i-accounts.length] = cfx.Account(PRIVATE_KEYS[i]);
-    await cfx.sendTransaction({ from: accounts[0], to: normal_accounts[i-accounts.length], value: 300000000, gasPrice: 1}).confirmed();
+    await cfx.sendTransaction({ from: accounts[0], to: normal_accounts[i-accounts.length], value: 48017578125012962550, gasPrice: 1}).confirmed();
     fs.appendFileSync('normalaccount.txt', PRIVATE_KEYS[i].toString()+"\\r\\n");
   }
   var contractosm_func;
@@ -162,6 +166,7 @@ foreach my $cmd( @commands ) {
 wait for @pids;
 open( $tx_fh,    ">", "tx.js" ) or die $!;
 $message = <<"END_MESSAGE";
+const JSBI = require('jsbi');
 const { Conflux } = require('js-conflux-sdk');
 const fs = require('fs');
 const PRIVATE_KEYS = ['0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
@@ -205,13 +210,19 @@ while ( my $line = <$default_fh> ) {
 close $default_fh;
 $message = <<"END_MESSAGE";
 const OSM_ADDR = '${osm_addr}';
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 async function main() {
   const cfx = new Conflux({
     url: 'http://localhost:12539',
     defaultGasPrice: 1,
     defaultGas: 1000000,
-    logger: console,
+    logger: undefined,
   });
+  var j;
+  var i;
+  var k;
   var accounts = new Array($num_poking_in_tx);
   for (i = 0; i < accounts.length; i++) {
     accounts[i] = cfx.Account(PRIVATE_KEYS[i]);
@@ -220,16 +231,7 @@ async function main() {
   for (i = accounts.length; i < accounts.length + normal_accounts.length; i++) {
     normal_accounts[i-accounts.length] = cfx.Account(PRIVATE_KEYS[i]);
   }
-  //var contractspots_func = new Array($num_poking_in_tx);
-  //for (i = 1; i < contractspots_func.length; i++) {
-  //  console.log("=====================Spotter Poking==============================");
-  //  console.log(i);
-  //  contractspots_func[i] = cfx.Contract({
-  //  abi: require('./contract/Spotter-abi.json'),
-  //  address: SPOT_ADDR[i],
-  //  });
-  //  receipt_tmp = await contractspots_func[i].simple_poke(OSM_ADDR).sendTransaction({from: accounts[i], gasPrice: 1});
-  //}
+  var contractspots_func = new Array($num_poking_in_tx);
 
   // create a list of n numbers between 1 and max
   var list = [];
@@ -263,21 +265,61 @@ async function main() {
   }
 
   var normal_accounts_gasprice = [];
-
-  for (i = 0; i < normal_accounts.length; i++) {
-    console.log("=====================Normal Transfer==============================");
+  var normal_accounts_nonce = [];
+  for (i = 1; i < contractspots_func.length; i++) {
+    console.log("=====================Spotter INT contract==============================");
     console.log(i);
-    normal_accounts_gasprice[i] = Math.round(newList[Math.floor(Math.random() * newList.length)]);
-    await cfx.sendTransaction({from: normal_accounts[i], to: accounts[0], value: 1, gasPrice: normal_accounts_gasprice[i]});
+    contractspots_func[i] = cfx.Contract({
+    abi: require('./contract/Spotter-abi.json'),
+    address: SPOT_ADDR[i],
+    });
   }
-  console.log("=====================Normal Account==============================");
   for (i = 0; i < normal_accounts.length; i++) {
-    console.log(normal_accounts[i].address);
-    console.log(normal_accounts_gasprice[i]);    
+    console.log("=====================Normal Transfer Init Nonce==============================");
+    console.log(i);
+    normal_accounts_nonce[i] = await cfx.getNextNonce(normal_accounts[i].address);
   }
-  console.log("=====================Poking Account==============================");
+  var accounts_nonce = [];
   for (i = 0; i < accounts.length; i++) {
-    console.log(accounts[i].address);
+    console.log("=====================Contract Tx Init Nonce==============================");
+    console.log(i);
+    accounts_nonce[i] = await cfx.getNextNonce(accounts[i].address);
+  }
+  console.log("Iter ", Math.round(${tx_rate}/(normal_accounts.length + contractspots_func.length)));
+  
+  var index = 1;
+  var num_nor_tx = 0;
+  var num_int_tx = 0;
+  while(true){
+    num_nor_tx = 0;
+    num_int_tx = 0; 
+    await sleep(1000);
+    for(j=0;j<Math.round(${tx_rate}/(normal_accounts.length + contractspots_func.length));j++){
+      for (i = 0; i < normal_accounts.length; i++) {
+        normal_accounts_gasprice[i] = Math.round(newList[Math.floor(Math.random() * newList.length)]);       
+        await cfx.sendTransaction({from: normal_accounts[i], to: accounts[0], value: 1, nonce: normal_accounts_nonce[i], gasPrice: normal_accounts_gasprice[i]});
+        normal_accounts_nonce[i] = JSBI.add(normal_accounts_nonce[i],JSBI.BigInt(1));    
+        num_nor_tx++;  
+      }
+      for(k = 0; k < index*100; k++){
+        for(i = 1; i < contractspots_func.length; i++){
+          receipt_tmp = await contractspots_func[i].getPrice().sendTransaction({from: accounts[i], nonce: accounts_nonce[i], gasPrice: Math.round(newList[Math.floor(Math.random() * newList.length)])});
+          accounts_nonce[i] = JSBI.add(accounts_nonce[i],JSBI.BigInt(1));
+          num_int_tx++;
+        }
+      }
+    }
+    console.log(index);
+    console.log("=====================Normal Account Last Nonce==============================");
+    for (i = 0; i < normal_accounts.length; i++) {
+      console.log(normal_accounts_nonce[i]);
+    }
+    console.log("=====================Poking Account Last Nonce==============================");
+    for (i = 0; i < accounts.length; i++) {
+      console.log(accounts_nonce[i]);
+    }
+    console.log("NORMAL_TX", num_nor_tx, "INT_TX", num_int_tx);
+    index++;
   }
 }
 main().catch(e => console.error(e));

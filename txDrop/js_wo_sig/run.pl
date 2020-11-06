@@ -45,6 +45,7 @@ async function main() {
     defaultGas: 1000000,
     logger: console,
   });
+  var i;
   var accounts = new Array($num_tx);
   for (i = 0; i < accounts.length; i++) {
     accounts[i] = cfx.Account(PRIVATE_KEYS[i]);
@@ -214,6 +215,9 @@ async function main() {
     defaultGas: 1000000,
     logger: undefined,
   });
+  var j;
+  var i;
+  var k;
   var accounts = new Array($num_poking_in_tx);
   for (i = 0; i < accounts.length; i++) {
     accounts[i] = cfx.Account(PRIVATE_KEYS[i]);
@@ -281,9 +285,6 @@ async function main() {
   var num_nor_tx = 0;
   var num_int_tx = 0;
   var num_pok_tx = 0;
-  var j;
-  var i;
-  var k;
   while(true){
     num_nor_tx = 0;
     num_int_tx = 0;
@@ -291,24 +292,21 @@ async function main() {
     await sleep(1000);
     for(j=0;j<Math.round(${tx_rate}/(normal_accounts.length + contractspots_func.length));j++){
       for (i = 0; i < normal_accounts.length; i++) {
-        console.log("NORMAL_TX UNDERGOING", i);
         normal_accounts_gasprice[i] = Math.round(newList[Math.floor(Math.random() * newList.length)]);       
         await cfx.sendTransaction({from: normal_accounts[i], to: accounts[0], value: 1, nonce: normal_accounts_nonce[i], gasPrice: normal_accounts_gasprice[i]});
         normal_accounts_nonce[i] = JSBI.add(normal_accounts_nonce[i],JSBI.BigInt(1));    
         num_nor_tx++;  
       }
-      for(k = 0; k < index; k++){
+      for(k = 0; k < index*100; k++){
         for(i = 1; i < contractspots_func.length; i++){
-          console.log("INT_TX UNDERGOING", i);
           receipt_tmp = await contractspots_func[i].getPrice().sendTransaction({from: accounts[i], nonce: accounts_nonce[i], gasPrice: Math.round(newList[Math.floor(Math.random() * newList.length)])});
           accounts_nonce[i] = JSBI.add(accounts_nonce[i],JSBI.BigInt(1));
           num_int_tx++;
         }
       }
     }
-    if(index%${poking_period}==0){
+    if(index%${poking_period}==0){//might be changed based the running time at Conflux side
       for(i = 1; i < contractspots_func.length; i++){
-        console.log("POK_TX UNDERGOING", i);
         receipt_tmp = await contractspots_func[i].simple_poke(OSM_ADDR).sendTransaction({from: accounts[i], nonce: accounts_nonce[i], gasPrice: $gasprice_normal_mean});
         accounts_nonce[i] = JSBI.add(accounts_nonce[i],JSBI.BigInt(1));
         num_pok_tx++;
@@ -323,7 +321,7 @@ async function main() {
     for (i = 0; i < accounts.length; i++) {
       console.log(accounts_nonce[i]);
     }
-    console.log("NORMAL_TX ", num_nor_tx, "INT_TX ", num_int_tx, "POK_TX ", num_pok_tx);
+    console.log("NORMAL_TX", num_nor_tx, "INT_TX", num_int_tx, "POK_TX", num_pok_tx);
     index++;
   }
 }
