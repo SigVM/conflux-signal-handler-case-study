@@ -281,38 +281,44 @@ async function main() {
     accounts_nonce[i] = await cfx.getNextNonce(accounts[i].address);
   }
   console.log("Iter ", Math.round(${tx_rate}/(normal_accounts.length + contractspots_func.length)));
-  var index = 1;
   var num_nor_tx = 0;
   var num_int_tx = 0;
   var num_pok_tx = 0;
+  var startregular = new Date();
+  var startpoke = new Date();
+  var endregular = new Date();
+  var endpoke = new Date();
   while(true){
     num_nor_tx = 0;
     num_int_tx = 0;
     num_pok_tx = 0;  
-    await sleep(1000);
-    for(j=0;j<Math.round(${tx_rate}/(normal_accounts.length + contractspots_func.length));j++){
-      for (i = 0; i < normal_accounts.length; i++) {
-        normal_accounts_gasprice[i] = Math.round(newList[Math.floor(Math.random() * newList.length)]);       
-        await cfx.sendTransaction({from: normal_accounts[i], to: accounts[0], value: 1, nonce: normal_accounts_nonce[i], gasPrice: normal_accounts_gasprice[i]});
-        normal_accounts_nonce[i] = JSBI.add(normal_accounts_nonce[i],JSBI.BigInt(1));    
-        num_nor_tx++;  
-      }
-      for(k = 0; k < index*100; k++){
+    while((endpoke.getTime()-startpoke.getTime())<(${poking_period}*1000)){
+      for(j=0;j<Math.round(${tx_rate}/(normal_accounts.length + contractspots_func.length));j++){
+        for (i = 0; i < normal_accounts.length; i++) {
+          normal_accounts_gasprice[i] = Math.round(newList[Math.floor(Math.random() * newList.length)]);       
+          await cfx.sendTransaction({from: normal_accounts[i], to: accounts[0], value: 1, nonce: normal_accounts_nonce[i], gasPrice: normal_accounts_gasprice[i]});
+          normal_accounts_nonce[i] = JSBI.add(normal_accounts_nonce[i],JSBI.BigInt(1));    
+          num_nor_tx++;  
+        }
         for(i = 1; i < contractspots_func.length; i++){
           receipt_tmp = await contractspots_func[i].getPrice().sendTransaction({from: accounts[i], nonce: accounts_nonce[i], gasPrice: Math.round(newList[Math.floor(Math.random() * newList.length)])});
           accounts_nonce[i] = JSBI.add(accounts_nonce[i],JSBI.BigInt(1));
           num_int_tx++;
         }
       }
-    }
-    if(index%${poking_period}==0){//might be changed based the running time at Conflux side
-      for(i = 1; i < contractspots_func.length; i++){
-        receipt_tmp = await contractspots_func[i].simple_poke(OSM_ADDR).sendTransaction({from: accounts[i], nonce: accounts_nonce[i], gasPrice: $gasprice_normal_mean});
-        accounts_nonce[i] = JSBI.add(accounts_nonce[i],JSBI.BigInt(1));
-        num_pok_tx++;
+      endregular = new Date();
+      while((endregular.getTime()-startregular.getTime())<(1000)){
+        endregular = new Date();
       }
+      startregular = new Date();
+      endpoke = new Date();
     }
-    console.log(index);
+    for(i = 1; i < contractspots_func.length; i++){
+      receipt_tmp = await contractspots_func[i].simple_poke(OSM_ADDR).sendTransaction({from: accounts[i], nonce: accounts_nonce[i], gasPrice: $gasprice_normal_mean});
+      accounts_nonce[i] = JSBI.add(accounts_nonce[i],JSBI.BigInt(1));
+      num_pok_tx++;
+    }
+    startpoke = new Date();
     console.log("=====================Normal Account Last Nonce==============================");
     for (i = 0; i < normal_accounts.length; i++) {
       console.log(normal_accounts_nonce[i]);
@@ -322,7 +328,6 @@ async function main() {
       console.log(accounts_nonce[i]);
     }
     console.log("NORMAL_TX", num_nor_tx, "INT_TX", num_int_tx, "POK_TX", num_pok_tx);
-    index++;
   }
 }
 main().catch(e => console.error(e));
