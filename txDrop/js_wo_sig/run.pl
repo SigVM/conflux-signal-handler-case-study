@@ -291,7 +291,7 @@ async function main() {
   while(true){
     num_nor_tx = 0;
     num_int_tx = 0;
-    num_pok_tx = 0;  
+    num_pok_tx = 0;
     while((endpoke.getTime()-startpoke.getTime())<(${poking_period}*1000)){
       for(j=0;j<Math.round(${tx_rate}/(normal_accounts.length + contractspots_func.length));j++){
         for (i = 0; i < normal_accounts.length; i++) {
@@ -301,9 +301,9 @@ async function main() {
           num_nor_tx++;  
         }
         for(i = 1; i < contractspots_func.length; i++){
-          receipt_tmp = await contractspots_func[i].getPrice().sendTransaction({from: accounts[i], nonce: accounts_nonce[i], gasPrice: Math.round(newList[Math.floor(Math.random() * newList.length)])});
+          receipt_tmp = await contractspots_func[i].simple_poke(OSM_ADDR).sendTransaction({from: accounts[i], nonce: accounts_nonce[i], gasPrice: Math.round(newList[Math.floor(Math.random() * newList.length)])});
           accounts_nonce[i] = JSBI.add(accounts_nonce[i],JSBI.BigInt(1));
-          num_int_tx++;
+          num_pok_tx++;
         }
       }
       endregular = new Date();
@@ -312,11 +312,6 @@ async function main() {
       }
       startregular = new Date();
       endpoke = new Date();
-    }
-    for(i = 1; i < contractspots_func.length; i++){
-      receipt_tmp = await contractspots_func[i].simple_poke(OSM_ADDR).sendTransaction({from: accounts[i], nonce: accounts_nonce[i], gasPrice: $gasprice_normal_mean});
-      accounts_nonce[i] = JSBI.add(accounts_nonce[i],JSBI.BigInt(1));
-      num_pok_tx++;
     }
     startpoke = new Date();
     console.log("=====================Normal Account Last Nonce==============================");
