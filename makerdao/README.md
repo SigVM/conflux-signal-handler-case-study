@@ -5,16 +5,14 @@ Evidently, a reliable price feed is critical to the MakerDAO system. Otherwise, 
 
 | Contract        | Description    | maintenance party  |
 | ---------- |:------------|:-------------:| :-----:| :-----:|
-| Median        | `feed()`: report a new price of the interested asset, the median of which is considered the oracle spot price; <br /> `peek()`: read the latest oracle price |  Authorized maintainers |
+| Median        | `feed()`: report a new price of the interested asset, the median of which is considered the oracle spot price;`peek()`: read the latest oracle price |  Authorized maintainers |
 | OSM        | `poke()`: prompt the contract to read from a Median/DSValue contract, and make the previous value valid. Can only be called an hour after the previous call <br /> `peek()`: read the latest value and whether it is valid | Anyone |
 | Spotter        | `poke()`: update price for an asset type, read from an OSM contract | Anyone |
 
 We included the minimal-functional version of the three contracts to demonstrate their reliance on poking in `js_osm_wo_sig/contract` and `js_osm_wo_sig_multinodes/contract`.
 
-<object data="MakerDAO_woSig.pdf" type="application/pdf" width="700px" height="700px">
-    <embed src="MakerDAO_woSig.pdf">
-        <p>This browser does not support PDFs. Please see: <a href="MakerDAO_woSig.pdf">Download PDF</a>.</p>
-    </embed>
-</object>
+![Overview of smart contracts and user interaction
+in MakerDAO OSM module](https://github.com/SigVM/conflux-signal-handler-case-study/blob/master/makerdao/MakerDAO_woSig.pdf){width=65%}
+
 
 ... write detailed instructions on how to run them, double check if the description above are accurate and modify the contract names in the code
