@@ -393,7 +393,8 @@ function set_empty_sig_key() private {
     empty_sig_key = keccak256("empty_sig()");
 }
 ////////////////////
-
+    address[2] arg_roles;
+    bytes32[3] arg_methods;
     /* ============ External ============ */
 
     /*
@@ -544,22 +545,30 @@ assembly {
 
         lastUpdatedAt = block.timestamp;
         address addr = address(this);
-// Original code: poke.bind(addr,HistoricalPriceFeed.empty_sig,0.1);
+// Original code: poke.bind(addr,HistoricalPriceFeed.empty_sig,0.1,false,arg_roles,arg_methods);
 set_poke_key();
 bytes32 poke_method_hash = keccak256("poke()");
-uint poke_gas_limit = 100000000;
-uint poke_gas_ratio = 110;
 bytes32 poke_signal_prototype_hash = keccak256("empty_sig()");
+bytes memory abi_encoded_poke_sigRoles = abi.encode(arg_roles);
+uint abi_encoded_poke_sigRoles_length = abi_encoded_poke_sigRoles.length;
+bytes memory abi_encoded_poke_sigMethods = abi.encode(arg_methods);
+uint abi_encoded_poke_sigMethods_length = abi_encoded_poke_sigMethods.length;
+
 assembly {
     mstore(
         0x00,
         sigbind(
             sload(poke_key.slot),
             poke_method_hash, 
-            poke_gas_limit, 
-            poke_gas_ratio,
+            100000000, 
+            110,
             addr,
-            poke_signal_prototype_hash
+            poke_signal_prototype_hash,
+            0,
+            abi_encoded_poke_sigRoles,
+            abi_encoded_poke_sigRoles_length,
+            abi_encoded_poke_sigMethods,
+            abi_encoded_poke_sigMethods_length
         )
     )
 }

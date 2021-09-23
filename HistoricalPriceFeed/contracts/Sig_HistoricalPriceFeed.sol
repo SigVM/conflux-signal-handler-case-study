@@ -415,7 +415,8 @@ contract HistoricalPriceFeed is
     LinkedList public historicalPriceData;
     //Declare an empty signnal
     signal empty_sig();
-
+    address[2] arg_roles;
+    bytes32[3] arg_methods;
     /* ============ External ============ */
 
     /*
@@ -548,7 +549,7 @@ contract HistoricalPriceFeed is
         // Set last updated timestamp
         lastUpdatedAt = block.timestamp;
         address addr = address(this);
-        poke.bind(addr, HistoricalPriceFeed.empty_sig, 0.1);
+        poke.bind(addr, HistoricalPriceFeed.empty_sig, 0.1, false, arg_roles, arg_methods);
     }
 
 }
