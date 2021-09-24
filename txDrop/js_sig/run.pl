@@ -340,6 +340,7 @@ node deployosm.js //deploy with dsvalue contract address
 node dsvalpoke.js
 node osmsethop.js
 node osmpokeandread.js
+./run.pl 1 1 1 5 5 1 2 1000
 =cut
 
 
