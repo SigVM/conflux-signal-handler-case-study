@@ -171,7 +171,7 @@ contract Sig_MultiSigWalletWithTimeLock is
 
     //The signal event to run tx with id
     signal TimeLock(uint256);
-
+    address[] SigTargets;
     modifier fullyConfirmed(uint256 transactionId) {
         require(
             isConfirmed(transactionId),
@@ -222,7 +222,7 @@ contract Sig_MultiSigWalletWithTimeLock is
         if (!isTxFullyConfirmedBeforeConfirmation && isConfirmed(transactionId)) {
             _setConfirmationTime(transactionId, block.timestamp);
             uint256 local_secondsTimeLocked;
-            TimeLock.emit(transactionId).delay(local_secondsTimeLocked);
+            TimeLock.emit(transactionId).target(SigTargets).delay(local_secondsTimeLocked);
         }
     }
 

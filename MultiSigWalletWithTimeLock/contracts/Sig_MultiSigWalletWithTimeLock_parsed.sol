@@ -166,7 +166,7 @@ function set_TimeLock_key() private {
     TimeLock_key = keccak256("TimeLock(uint256)");
 }
 ////////////////////
-
+    address[] SigTargets;
     modifier fullyConfirmed(uint256 transactionId) {
         require(
             isConfirmed(transactionId),
@@ -215,10 +215,12 @@ assembly {
         if (!isTxFullyConfirmedBeforeConfirmation && isConfirmed(transactionId)) {
             _setConfirmationTime(transactionId, block.timestamp);
             uint256 local_secondsTimeLocked;
-// Original code: TimeLock.emit(transactionId).delay(local_secondsTimeLocked);
+// Original code: TimeLock.emit(transactionId).target(SigTargets).delay(local_secondsTimeLocked);
 bytes memory abi_encoded_TimeLock_data = abi.encode(transactionId);
 // This length is measured in bytes and is always a multiple of 32.
 uint abi_encoded_TimeLock_length = abi_encoded_TimeLock_data.length;
+bytes memory abi_encoded_TimeLock_handlers = abi.encode(SigTargets);
+uint abi_encoded_TimeLock_handlers_length = abi_encoded_TimeLock_handlers.length - 64;
 assembly {
     mstore(
         0x00,
@@ -226,7 +228,9 @@ assembly {
             sload(TimeLock_key.slot), 
             abi_encoded_TimeLock_data,
             abi_encoded_TimeLock_length,
-            local_secondsTimeLocked
+            local_secondsTimeLocked,
+            abi_encoded_TimeLock_handlers,
+            abi_encoded_TimeLock_handlers_length
         )
     )
 }
