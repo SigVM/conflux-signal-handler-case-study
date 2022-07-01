@@ -293,7 +293,7 @@ async function main() {
     num_int_tx = 0;
     num_pok_tx = 0;
     while((endpoke.getTime()-startpoke.getTime())<(${poking_period}*1000)){
-      for(j=0;j<Math.round(${tx_rate}/(normal_accounts.length + contractspots_func.length));j++){
+      for(j=0;j<Math.round(${tx_rate}/(normal_accounts.length + contractspots_func.length - 1));j++){
         for (i = 0; i < normal_accounts.length; i++) {
           normal_accounts_gasprice[i] = Math.round(newList[Math.floor(Math.random() * newList.length)]);       
           await cfx.sendTransaction({from: normal_accounts[i], to: accounts[0], value: 1, nonce: normal_accounts_nonce[i], gasPrice: normal_accounts_gasprice[i]});
@@ -313,6 +313,7 @@ async function main() {
       startregular = new Date();
       endpoke = new Date();
     }
+    console.log("Time passed:", endpoke.getTime()-startpoke.getTime());
     startpoke = new Date();
     console.log("=====================Normal Account Last Nonce==============================");
     for (i = 0; i < normal_accounts.length; i++) {
@@ -336,6 +337,7 @@ node deployosm.js //deploy with dsvalue contract address
 node dsvalpoke.js
 node osmsethop.js
 node osmpokeandread.js
+./run.pl 10 5 1 50 50 15 5 1000 1
 =cut
 
 
